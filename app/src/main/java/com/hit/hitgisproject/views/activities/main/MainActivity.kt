@@ -1,6 +1,9 @@
 package com.hit.hitgisproject.views.activities.main
 
+import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.Path
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -16,6 +19,7 @@ import com.hit.hitgisproject.R
 import com.hit.hitgisproject.databinding.ActivityMainBinding
 import com.hit.hitgisproject.models.Place
 import com.hit.hitgisproject.models.PlacesDataBase
+import com.hit.hitgisproject.utils.WazeDialog
 import com.hit.hitgisproject.views.activities.base.BaseActivity
 
 
@@ -113,10 +117,18 @@ class MainActivity : BaseActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClick
     override fun onMarkerClick(marker: Marker): Boolean {
         PlacesDataBase.placesList.forEach { place ->
             if(place.name == marker.title) {
-                marker.remove()
+                WazeDialog(this).show("Navigate using waze?","") {
+                    val uri = WAZE_PREFIX + place.LatitudeLongtitude.latitude + ", " + place.LatitudeLongtitude.longitude + WAZE_POSTFIX
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+                }
             }
         }
         return true
+    }
+
+    companion object {
+        const val WAZE_PREFIX = "https://waze.com/ul?ll="
+        const val WAZE_POSTFIX = "&navigate=yes"
     }
 }
 
