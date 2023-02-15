@@ -8,7 +8,7 @@ class WazeDialog(context: Context) : AlertDialog.Builder(context) {
     lateinit var onResponse: (r : ResponseType) -> Unit
 
     enum class ResponseType {
-        YES, NO, CANCEL
+        YES, NO, FAVOURITE
     }
 
     fun show(title: String, message: String, listener: (r : ResponseType) -> Unit) {
@@ -26,6 +26,10 @@ class WazeDialog(context: Context) : AlertDialog.Builder(context) {
         // performing negative action
         builder.setNegativeButton("No") { _, _ ->
             onResponse(ResponseType.NO)
+        }
+
+        builder.setNeutralButton("Set Favourite") { _, _ ->
+            onResponse(ResponseType.FAVOURITE)
         }
 
         // Create the AlertDialog

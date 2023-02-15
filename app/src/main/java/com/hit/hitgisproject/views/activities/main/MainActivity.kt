@@ -5,9 +5,12 @@ import android.content.Intent
 import android.graphics.Path
 import android.net.Uri
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.appcompat.widget.AppCompatCheckedTextView
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -42,6 +45,23 @@ class MainActivity : BaseActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClick
         setListeners()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.topbar_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val id = item.itemId
+
+        if (id == R.id.favourite) {
+            binding.clearAllMarkersFab.callOnClick()
+            setAllFavouritePlacesOnMap()
+            Toast.makeText(this, "Favourite places shown on the map!", Toast.LENGTH_LONG).show()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     private fun setCitySpinnerData() {
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, PlacesDataBase.getCitiesList())
         binding.spinnerCity.adapter = adapter
@@ -63,6 +83,22 @@ class MainActivity : BaseActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClick
         }
     }
 
+    private fun setAllFavouritePlacesOnMap() {
+        PlacesDataBase.placesList.forEach { place ->
+            if(place.isFavourite) {
+                val markerOptions = MarkerOptions()
+                    .position(place.LatitudeLongtitude)
+                PlacesDataBase.markers.add(
+                    googleMap?.addMarker(markerOptions).apply {
+                        this?.title = place.name
+                    })
+                googleMap?.moveCamera(CameraUpdateFactory.newLatLng(place.LatitudeLongtitude))
+                googleMap?.animateCamera(CameraUpdateFactory.zoomIn())
+                googleMap?.animateCamera(CameraUpdateFactory.zoomTo(15F), 2000, null)
+            }
+        }
+    }
+
     private fun setListeners() {
         binding.apply {
             submitBtn.setOnClickListener {
@@ -77,6 +113,10 @@ class MainActivity : BaseActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClick
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                     setSpaSpinnerData((view as AppCompatCheckedTextView).text.toString())
                 }
+            }
+            clearAllMarkersFab.setOnClickListener {
+                googleMap?.clear()
+                getAndPlaceDefaultMarker()
             }
         }
     }
@@ -101,6 +141,10 @@ class MainActivity : BaseActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClick
 
         googleMap?.setOnMarkerClickListener(this@MainActivity)
 
+        getAndPlaceDefaultMarker()
+    }
+
+    private fun getAndPlaceDefaultMarker() {
         PlacesDataBase.getHITPlace().also { place ->
             val markerOptions = MarkerOptions()
                 .position(place.LatitudeLongtitude)
@@ -118,8 +162,14 @@ class MainActivity : BaseActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClick
         PlacesDataBase.placesList.forEach { place ->
             if(place.name == marker.title) {
                 WazeDialog(this).show("Navigate using waze?","") {
-                    val uri = WAZE_PREFIX + place.LatitudeLongtitude.latitude + ", " + place.LatitudeLongtitude.longitude + WAZE_POSTFIX
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+                    if(it == WazeDialog.ResponseType.YES) {
+                        val uri = WAZE_PREFIX + place.LatitudeLongtitude.latitude + ", " + place.LatitudeLongtitude.longitude + WAZE_POSTFIX
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+                    }
+                    if(it == WazeDialog.ResponseType.FAVOURITE) {
+                        place.isFavourite = true
+                        Toast.makeText(this,"Place set as favourite!", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }

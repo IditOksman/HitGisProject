@@ -6,6 +6,6 @@ data class Place(
     var name: String,
     var LatitudeLongtitude: LatLng,
     var city: String,
-    var content: String
+    var isFavourite: Boolean
 
 )
